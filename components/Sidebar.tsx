@@ -23,15 +23,20 @@ export default function Sidebar() {
   const [dbData, setDbData] = useState<Transcript | null>(null);
 
   useEffect(() => {
-    // Initial fetch
+    // Initial fetch with error handling
     supabase
       .from('transcripts')
       .select('*')
       .order('updated_at', { ascending: false })
       .limit(1)
       .single()
-      .then(({ data }) => {
-        if (data) setDbData(data);
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setDbData(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch sidebar data:", err);
       });
 
     // Real-time subscription for UI updates

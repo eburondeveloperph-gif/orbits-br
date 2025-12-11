@@ -284,15 +284,26 @@ export default function DatabaseBridge() {
     };
 
     const fetchLatest = async () => {
-      const { data, error } = await supabase
-        .from('transcripts')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (!error && data) {
-        processNewData(data as Transcript);
+      try {
+        const { data, error } = await supabase
+          .from('transcripts')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          // Log quiet warning instead of throwing to avoid noise
+          console.warn('Supabase polling warning:', error.message);
+          return;
+        }
+
+        if (data) {
+          processNewData(data as Transcript);
+        }
+      } catch (err) {
+        // Catch network errors (e.g. offline, CORS, invalid URL)
+        console.warn('Supabase connection error - retrying:', err);
       }
     };
 
@@ -316,7 +327,13 @@ export default function DatabaseBridge() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+         if (status === 'SUBSCRIBED') {
+           console.log('Connected to realtime db');
+         } else if (status === 'CHANNEL_ERROR') {
+           console.warn('Realtime channel error');
+         }
+      });
 
     fetchLatest();
 
