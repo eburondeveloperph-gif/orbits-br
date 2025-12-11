@@ -184,23 +184,13 @@ export default function DatabaseBridge() {
           // This allows masking the latency of the next request.
           
           const playStart = Date.now();
-          let peakDuration = 0;
-
+          
           while (Date.now() - playStart < 60000) {
              const state = getAudioStreamerState(targetSpeaker);
              
-             // Track peak duration to distinguish short vs long utterances.
-             // This helps us know if the clip is "short" or "long".
-             if (state.duration > peakDuration) {
-                 peakDuration = state.duration;
-             }
-
              // Dynamic Threshold Calculation:
-             // - If the utterance is SHORT (< 1.5s), we use a small buffer (0.2s) to avoid 
-             //   trampling short confirmations like "Yes" or "No".
-             // - If the utterance is LONG (>= 1.5s), we use a larger buffer (1.5s) to start
-             //   generating the next turn early, ensuring a smooth cross-fade handover.
-             const threshold = peakDuration < 1.5 ? 0.2 : 1.5;
+             // Use 0.5s before the next speaker to ensure smooth transition
+             const threshold = 0.5;
              
              if (state.duration <= threshold) {
                 break;
